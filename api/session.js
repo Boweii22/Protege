@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {requireAuth} from '../server/auth.js';
 
 const belief=z.object({id:z.string(),claim:z.string(),confidence:z.number(),status:z.enum(['misconception','shaky','solid'])});
 const studentOutput=z.object({reply:z.string(),beliefs:z.array(belief)});
@@ -67,6 +68,7 @@ async function generate(system,user,schema,purpose){
 
 export default async function handler(request,response){
   if(request.method!=='POST')return response.status(405).json({error:'Method not allowed'});
+  const session=await requireAuth(request,response);if(!session)return;
   try{
     const body=input.parse(request.body);
     if(body.action==='student'){

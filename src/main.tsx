@@ -2,5 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import {ProtegeAuthProvider} from './auth/AuthProvider';
 import './styles.css';
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ErrorBoundary><App/></ErrorBoundary></React.StrictMode>);
+import './auth.css';
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ErrorBoundary><ProtegeAuthProvider><App/></ProtegeAuthProvider></ErrorBoundary></React.StrictMode>);
