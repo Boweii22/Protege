@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-No account, database, or API key is required. The current build includes a deterministic demo engine so the complete teach → learn → exam → diagnosis loop remains reliable on stage.
+For real model-backed sessions, copy `.env.example` to `.env.local` and set a Vercel AI Gateway key plus a current gateway model ID. Configure the same variables in the Vercel project. Without them, the interface visibly switches to offline demo mode instead of pretending the fallback is live intelligence.
 
 ## What’s included
 
@@ -53,7 +53,7 @@ Topic seeds are phrased as learner beliefs rather than claims of universal preva
 
 ## Architecture direction
 
-The front end is React 18, Vite, TypeScript, Zustand, and Framer Motion. The demo engine is deliberately local and deterministic. A production AI adapter should use a serverless proxy, validate every model response with Zod, stream student turns, and pass only the final belief state—not the transcript—to the examiner.
+The front end is React 18, Vite, TypeScript, Zustand, and Framer Motion. A Vercel serverless function runs the model pipeline, validates every model response with Zod, and passes only the final belief state—not the transcript—to the examiner. The diagnostician receives the transcript only after the blind exam is complete.
 
 ## What’s next
 

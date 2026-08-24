@@ -4,4 +4,5 @@ export type Topic={id:string;title:string;subject:string;level:string;hook:strin
 export type Message={id:string;role:'teacher'|'student';text:string;time:string};
 export type ExamItem={q:string;answer:string;score:number;why:string;beliefId:string};
 export type Gap={messageId:string;quote:string;type:string;cost:number;fix:string};
+export type ExamResult={questions:ExamItem[];total:number;verdict:string;gaps:Gap[];strongestMoment?:{messageId:string;why:string};nextChallenge?:string};
 export type Stage='welcome'|'setup'|'teach'|'exam'|'results';
