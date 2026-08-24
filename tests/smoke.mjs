@@ -25,8 +25,7 @@ const replyVisible = await page.locator('.messages article.student').count() >= 
 await page.getByRole('button', { name: /test her/i }).click();
 await page.waitForTimeout(500);
 const examVisible = await page.getByText('Maya is being tested.').isVisible().catch(() => false);
-await page.waitForTimeout(4500);
-const resultsVisible = await page.getByText('Maya scored').isVisible().catch(() => false);
+const resultsVisible = await page.getByText('Maya scored').waitFor({state:'visible',timeout:60000}).then(()=>true).catch(()=>false);
 const bodyText = await page.locator('body').innerText();
 console.log(JSON.stringify({ lessonVisible, replyVisible, examVisible, resultsVisible, bodyLength: bodyText.length, bodyPreview: bodyText.slice(0, 240), errors }, null, 2));
 await page.screenshot({ path: 'lesson-smoke.png', fullPage: true });
