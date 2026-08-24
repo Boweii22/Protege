@@ -33,4 +33,19 @@ await sql`CREATE TABLE IF NOT EXISTS ai_generations (
   completed_at TIMESTAMPTZ
 )`;
 await sql`CREATE INDEX IF NOT EXISTS generations_lesson_idx ON ai_generations(lesson_id,created_at)`;
+await sql`CREATE TABLE IF NOT EXISTS generated_topics (
+  id UUID PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  normalized_title TEXT NOT NULL,
+  request JSONB NOT NULL,
+  topic JSONB,
+  model TEXT,
+  token_usage JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status TEXT NOT NULL DEFAULT 'pending',
+  error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id,normalized_title)
+)`;
+await sql`CREATE INDEX IF NOT EXISTS generated_topics_user_idx ON generated_topics(user_id,updated_at DESC)`;
 console.log('Protégé persistence schema is ready.');

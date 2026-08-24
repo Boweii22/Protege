@@ -1,1 +1,1 @@
-{"functions":{"api/session.js":{"maxDuration":180},"api/speech.js":{"maxDuration":30}},"rewrites":[{"source":"/((?!api/).*)","destination":"/index.html"}]}
+{"functions":{"api/session.js":{"maxDuration":180},"api/speech.js":{"maxDuration":30},"api/topics.js":{"maxDuration":60}},"rewrites":[{"source":"/((?!api/).*)","destination":"/index.html"}]}
