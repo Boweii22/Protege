@@ -5,13 +5,14 @@ const studentOutput=z.object({reply:z.string(),beliefs:z.array(belief)});
 const examinerOutput=z.object({questions:z.array(z.object({q:z.string(),answer:z.string(),score:z.number(),why:z.string(),beliefId:z.string()})).length(5),total:z.number(),verdict:z.string()});
 const diagnosisOutput=z.object({gaps:z.array(z.object({messageId:z.string(),quote:z.string(),type:z.string(),cost:z.number(),fix:z.string()})),strongestMoment:z.object({messageId:z.string(),why:z.string()}).optional(),nextChallenge:z.string().optional()});
 const input=z.object({action:z.enum(['student','exam']),topic:z.object({id:z.string(),title:z.string(),level:z.string(),misconceptions:z.array(z.string()),mustHit:z.array(z.string())}),persona:z.string().optional(),messages:z.array(z.object({id:z.string(),role:z.enum(['teacher','student']),text:z.string(),time:z.string()})),beliefs:z.array(belief)});
+class QuotaError extends Error{constructor(seconds){super(`Gemini is busy. Retrying automatically in ${seconds} seconds.`);this.retryAfter=seconds;}}
 
 async function callGemini(system,user){
   const key=process.env.GEMINI_API_KEY;
   const model=process.env.GEMINI_MODEL||'gemini-3.6-flash';
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const response=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{temperature:.35,responseMimeType:'application/json'}})});
-  if(!response.ok)throw new Error(`Gemini ${response.status}: ${await response.text()}`);
+  if(!response.ok){const data=await response.json().catch(()=>null);if(response.status===429){const delay=data?.error?.details?.find(item=>item['@type']==='type.googleapis.com/google.rpc.RetryInfo')?.retryDelay;throw new QuotaError(Math.max(1,Number.parseInt(delay??'60',10)));}throw new Error(`Gemini ${response.status}: ${JSON.stringify(data)}`);}
   const data=await response.json();
   return data.candidates?.[0]?.content?.parts?.map(part=>part.text??'').join('')??'';
 }
@@ -39,5 +40,5 @@ export default async function handler(request,response){
     const exam=await generate(examinerSystem,JSON.stringify({correctModel:body.topic.mustHit,studentBeliefs:body.beliefs}),examinerOutput);
     const diagnosisSystem=`You are a precise, kind teaching coach. You may now see the transcript and the already-completed blind exam. For each material lost-point cause, quote an exact substring from one teacher message and map it to that message id. Return JSON exactly shaped as {"gaps":[{"messageId":"...","quote":"exact substring","type":"vague|missing_step|undefined_term|asserted_not_explained|factually_wrong","cost":0,"fix":"one concrete replacement sentence"}],"strongestMoment":{"messageId":"...","why":"..."},"nextChallenge":"..."}. Do not invent quotes.`;
     const diagnosis=await generate(diagnosisSystem,JSON.stringify({topic:body.topic,transcript:body.messages,studentBeliefs:body.beliefs,exam}),diagnosisOutput);return response.status(200).json({...exam,...diagnosis});
-  }catch(error){const message=error instanceof Error?error.message:'Unknown error';console.error('[api/session]',message);return response.status(message==='MODEL_NOT_CONFIGURED'?503:500).json({error:message});}
+  }catch(error){const message=error instanceof Error?error.message:'Unknown error';console.error('[api/session]',message);if(error instanceof QuotaError)return response.status(429).json({error:message,retryAfter:error.retryAfter});return response.status(message==='MODEL_NOT_CONFIGURED'?503:500).json({error:message});}
 }
