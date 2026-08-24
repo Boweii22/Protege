@@ -1,0 +1,5 @@
+import {Component,type ErrorInfo,type ReactNode} from 'react';
+import {AlertTriangle,RotateCcw} from 'lucide-react';
+import {Brand} from './Brand';
+type Props={children:ReactNode};type State={error:Error|null};
+export class ErrorBoundary extends Component<Props,State>{state:State={error:null};static getDerivedStateFromError(error:Error){return{error}}componentDidCatch(error:Error,info:ErrorInfo){console.error('[protege-ui-crash]',error,info.componentStack)}render(){if(!this.state.error)return this.props.children;return <main className="crash-screen paper"><Brand/><div className="crash-card"><AlertTriangle/><span className="kicker">THE PAGE HIT A SNAG</span><h1>Not blank. Recoverable.</h1><p>{this.state.error.message||'An unexpected browser error interrupted the lesson.'}</p><button className="primary" onClick={()=>window.location.reload()}><RotateCcw size={16}/> Reload Protégé</button><small>If this repeats, copy the message above—it identifies the exact failure.</small></div></main>}}

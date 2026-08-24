@@ -7,7 +7,7 @@ const examSchema=z.object({questions:z.array(z.object({q:z.string(),answer:z.str
 
 async function request<T>(body:unknown,schema:z.ZodType<T>):Promise<T>{
   const response=await fetch('/api/session',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-  if(!response.ok) throw new Error(response.status===503?'Live model is not configured on this deployment.':`Model request failed (${response.status}).`);
+  if(!response.ok){const data=await response.json().catch(()=>null) as {error?:string}|null;throw new Error(data?.error??(response.status===503?'Live model is not configured on this deployment.':`Model request failed (${response.status}).`))}
   return schema.parse(await response.json());
 }
 export const teachStudent=(topic:Topic,persona:string,messages:Message[],beliefs:Belief[])=>request({action:'student',topic,persona,messages,beliefs:beliefs.map(({x,y,...belief})=>belief)},studentSchema);
