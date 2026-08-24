@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-Set `GEMINI_API_KEY` in Vercel or `.env.local`; `GEMINI_MODEL` defaults to `gemini-2.5-flash`. AI Gateway is also supported through `AI_GATEWAY_API_KEY` and `AI_MODEL`. There are no fabricated fallback conversations or scores: provider failures are shown as errors and can be retried.
+Set `GEMINI_API_KEY` in Vercel or `.env.local`; `GEMINI_MODEL` defaults to `gemini-3.6-flash`. AI Gateway is also supported through `AI_GATEWAY_API_KEY` and `AI_MODEL`. There are no fabricated fallback conversations or scores: provider failures are shown as errors and can be retried.
 
 ## What’s included
 

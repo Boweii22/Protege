@@ -8,7 +8,7 @@ const input=z.object({action:z.enum(['student','exam']),topic:z.object({id:z.str
 
 async function callGemini(system,user){
   const key=process.env.GEMINI_API_KEY;
-  const model=process.env.GEMINI_MODEL||'gemini-2.5-flash';
+  const model=process.env.GEMINI_MODEL||'gemini-3.6-flash';
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const response=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{temperature:.35,responseMimeType:'application/json'}})});
   if(!response.ok)throw new Error(`Gemini ${response.status}: ${await response.text()}`);
