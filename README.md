@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-For real model-backed sessions without AI Gateway, set `GEMINI_API_KEY` in Vercel or `.env.local`; `GEMINI_MODEL` defaults to `gemini-2.5-flash`. AI Gateway remains supported through `AI_GATEWAY_API_KEY` and `AI_MODEL`, but Gemini takes priority when both are present. Without either provider, the interface visibly switches to offline demo mode.
+Set `GEMINI_API_KEY` in Vercel or `.env.local`; `GEMINI_MODEL` defaults to `gemini-2.5-flash`. AI Gateway is also supported through `AI_GATEWAY_API_KEY` and `AI_MODEL`. There are no fabricated fallback conversations or scores: provider failures are shown as errors and can be retried.
 
 ## What’s included
 
