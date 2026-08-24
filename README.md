@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-For real model-backed sessions, copy `.env.example` to `.env.local` and set a Vercel AI Gateway key plus a current gateway model ID. Configure the same variables in the Vercel project. Without them, the interface visibly switches to offline demo mode instead of pretending the fallback is live intelligence.
+For real model-backed sessions without AI Gateway, set `GEMINI_API_KEY` in Vercel or `.env.local`; `GEMINI_MODEL` defaults to `gemini-2.5-flash`. AI Gateway remains supported through `AI_GATEWAY_API_KEY` and `AI_MODEL`, but Gemini takes priority when both are present. Without either provider, the interface visibly switches to offline demo mode.
 
 ## What’s included
 
