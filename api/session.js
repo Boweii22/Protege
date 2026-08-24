@@ -14,6 +14,25 @@ const modelPools={
   diagnosis:['gemini-3.7-flash','gemini-3.1-pro-preview','gemini-3.5-flash-lite']
 };
 
+function parseModelJson(text){
+  const start=text.indexOf('{');
+  if(start<0)throw new SyntaxError('The model response did not contain a JSON object.');
+  let depth=0,inString=false,escaped=false;
+  for(let index=start;index<text.length;index++){
+    const char=text[index];
+    if(inString){
+      if(escaped)escaped=false;
+      else if(char==='\\')escaped=true;
+      else if(char==='"')inString=false;
+      continue;
+    }
+    if(char==='"'){inString=true;continue;}
+    if(char==='{')depth++;
+    if(char==='}'&&--depth===0)return JSON.parse(text.slice(start,index+1));
+  }
+  throw new SyntaxError('The model response contained incomplete JSON.');
+}
+
 async function callGemini(system,user,model){
   const key=process.env.GEMINI_API_KEY;
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
@@ -38,12 +57,12 @@ async function generate(system,user,schema,purpose){
     const models=[configured,process.env.GEMINI_MODEL,...modelPools[purpose]].filter((model,index,list)=>model&&list.indexOf(model)===index);
     let lastRetryableError;
     for(const model of models){
-      try{return schema.parse(JSON.parse(await callGemini(system,user,model)));}
+      try{return schema.parse(parseModelJson(await callGemini(system,user,model)));}
       catch(error){if(error instanceof QuotaError||error instanceof ModelUnavailableError){lastRetryableError=error;console.warn('[api/session] model unavailable',{purpose,model,reason:error.constructor.name});continue;}throw error;}
     }
     throw lastRetryableError??new ModelUnavailableError();
   }
-  return schema.parse(JSON.parse(await callGateway(system,user)));
+  return schema.parse(parseModelJson(await callGateway(system,user)));
 }
 
 export default async function handler(request,response){
