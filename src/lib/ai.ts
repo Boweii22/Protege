@@ -2,7 +2,7 @@ import {z} from 'zod';
 import type {Belief,ExamResult,Message,Topic} from '../types';
 import {authenticatedHeaders} from '../auth/token';
 
-const beliefSchema=z.object({id:z.string(),claim:z.string(),confidence:z.number().min(0).max(1),status:z.enum(['misconception','shaky','solid'])});
+const beliefSchema=z.object({id:z.string(),claim:z.string(),confidence:z.number().min(0).max(1),status:z.enum(['misconception','shaky','solid']),replacement:z.string().optional()});
 const studentSchema=z.object({reply:z.string(),beliefs:z.array(beliefSchema)});
 const examSchema=z.object({questions:z.array(z.object({q:z.string(),answer:z.string(),score:z.number().min(0).max(20),why:z.string(),beliefId:z.string()})),total:z.number().min(0).max(100),verdict:z.string(),gaps:z.array(z.object({messageId:z.string(),quote:z.string(),type:z.string(),cost:z.number(),fix:z.string()})),strongestMoment:z.object({messageId:z.string(),why:z.string()}).optional(),nextChallenge:z.string().optional()});
 

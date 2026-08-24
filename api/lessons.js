@@ -3,7 +3,7 @@ import {requireAuth} from '../server/auth.js';
 import {getSql} from '../server/db.js';
 
 const topic=z.object({id:z.string(),title:z.string(),subject:z.string(),level:z.string(),hook:z.string(),misconceptions:z.array(z.string()),mustHit:z.array(z.string())});
-const snapshot=z.object({id:z.string().uuid(),topic,persona:z.string(),stage:z.enum(['teach','exam','results']),messages:z.array(z.object({id:z.string(),role:z.enum(['teacher','student']),text:z.string(),time:z.string()})),beliefs:z.array(z.object({id:z.string(),claim:z.string(),confidence:z.number(),status:z.enum(['misconception','shaky','solid']),x:z.number(),y:z.number()})),exam:z.unknown().nullable(),turn:z.number().int().nonnegative()});
+const snapshot=z.object({id:z.string().uuid(),topic,persona:z.string(),stage:z.enum(['teach','exam','results']),messages:z.array(z.object({id:z.string(),role:z.enum(['teacher','student']),text:z.string(),time:z.string()})),beliefs:z.array(z.object({id:z.string(),claim:z.string(),confidence:z.number(),status:z.enum(['misconception','shaky','solid']),x:z.number(),y:z.number(),replacement:z.string().optional()})),exam:z.unknown().nullable(),turn:z.number().int().nonnegative()});
 const shape=row=>({id:row.id,topic:row.topic,persona:row.persona,stage:row.stage,messages:row.messages,beliefs:row.beliefs,exam:row.exam,turn:row.turn,status:row.status,createdAt:row.created_at,updatedAt:row.updated_at});
 
 export default async function handler(request,response){
