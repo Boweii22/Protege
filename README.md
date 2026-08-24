@@ -28,6 +28,8 @@ npm run dev
 
 Production inference runs through Vercel AI Gateway using deployment OIDC. Each task has a purpose-built, cross-provider route: fast premium models for Maya and Topic Forge; stronger reasoning models for the blind exam and diagnosis; and a low-cost continuity model last. Gateway calls carry private per-user attribution and feature tags, use bounded retries/timeouts, and persist the resolved model, tokens, latency, and failover state. Override a route with comma-separated `AI_<PURPOSE>_MODELS`; see `.env.example`. There are no fabricated fallback conversations or scores.
 
+AI Gateway credits must be active on the Vercel team. Protégé explicitly attempts every configured model in order, but an account-wide free-tier exhaustion cannot be bypassed in code; it returns an honest `429` and resumes automatically once credits or a valid BYOK provider are available.
+
 Signed-in users can inspect private 24-hour routing telemetry at `/api/model-status`. Set spend limits and per-user rate limits in Vercel AI Gateway; the API distinguishes capacity, budget, and provider failures without leaking upstream credentials or raw provider errors.
 
 Production guardrails use atomic Neon counters for per-user API budgets and expiring generation leases to stop duplicate paid calls. Limits return standard `RateLimit-*` and `Retry-After` headers. Server, provider, database, speech, and browser failures emit correlated structured logs and sanitized `error_events`; users receive a short incident code instead of provider internals. `/api/model-status` includes the signed-in user's 24-hour model and error health.

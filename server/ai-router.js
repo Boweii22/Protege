@@ -28,9 +28,16 @@ function gatewayClient(){
 
 function publicError(error){
   const status=error?.statusCode||error?.status;
-  if(status===429)return new ModelRoutingError('The teaching studio is at capacity. Please wait a moment and retry.',429);
-  if(status===402)return new ModelRoutingError('The AI studio has reached its protected spend limit. The owner needs to refresh its credits.',503);
+  const message=error instanceof Error?error.message:'';
+  if(status===429||/rate.?limit|quota/i.test(message))return new ModelRoutingError('The teaching studio has exhausted its current model allowance. Please retry later or add AI Gateway credits.',429);
+  if(status===402||/paid credits|payment required|spend limit/i.test(message))return new ModelRoutingError('The AI studio needs paid Gateway credits before it can continue.',503);
   return new ModelRoutingError();
+}
+
+export async function runWithContinuity(models,invoke){
+  const primary=models[0],continuity=models.at(-1),attempted=[];let firstError,lastError;
+  for(const model of models){const tier=model===continuity&&models.length>1?'continuity':'paid';attempted.push(model);try{return {...await invoke(model,[],tier),primary,attempted,continuityUsed:tier==='continuity'}}catch(error){firstError??=error;lastError=error;console.warn('[ai-router] route attempt failed',{model,tier,reason:error instanceof Error?error.message.slice(0,160):'unknown'})}}
+  if(lastError instanceof Error)lastError.cause=firstError;throw lastError;
 }
 
 export async function routeStructured({purpose,schema,system,prompt,userId,feature=purpose,description}){
@@ -46,19 +53,21 @@ export async function routeStructured({purpose,schema,system,prompt,userId,featu
   const primary=models[0];
   const started=Date.now();
   try{
-    const result=await generateText({
-      model:gatewayClient()(primary),
+    const client=gatewayClient();
+    const routed=await runWithContinuity(models,async(model,fallbackModels,tier)=>{const result=await generateText({
+      model:client(model),
       output:Output.object({schema,name:`protege_${purpose}`,description}),
       system,
       prompt,
       temperature:.35,
       maxOutputTokens:purpose==='student'?900:2200,
-      maxRetries:2,
+      // The route itself retries across independent models; repeating one quota failure only adds latency.
+      maxRetries:0,
       abortSignal:AbortSignal.timeout(purpose==='student'?26000:45000),
-      providerOptions:{gateway:{models:models.slice(1),user:userId,tags:[`feature:${feature}`,`route:${purpose}`,'app:protege','tier:paid']}}
-    });
-    const resolvedModel=result.response?.modelId||result.providerMetadata?.gateway?.modelId||primary;
-    return {data:result.output,model:resolvedModel,usage:result.usage,routing:{purpose,primary,resolvedModel,candidates:models,failover:resolvedModel!==primary,durationMs:Date.now()-started}};
+      providerOptions:{gateway:{models:fallbackModels,user:userId,tags:[`feature:${feature}`,`route:${purpose}`,'app:protege',`tier:${tier}`]}}
+    });return {result,requestedModel:model,tier}});
+    const resolvedModel=routed.result.response?.modelId||routed.result.providerMetadata?.gateway?.modelId||routed.requestedModel;
+    return {data:routed.result.output,model:resolvedModel,usage:routed.result.usage,routing:{purpose,primary,resolvedModel,candidates:models,attempted:routed.attempted,tier:routed.tier,failover:resolvedModel!==primary,continuityUsed:routed.continuityUsed,durationMs:Date.now()-started}};
   }catch(error){
     console.error('[ai-router]',{purpose,primary,status:error?.statusCode||error?.status,reason:error instanceof Error?error.message.slice(0,180):'unknown'});
     throw publicError(error);
