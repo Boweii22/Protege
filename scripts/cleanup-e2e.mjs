@@ -1,0 +1,3 @@
+import {createHash} from 'node:crypto';
+import {neon} from '@neondatabase/serverless';
+if(process.env.E2E_TEST_MODE!=='true')throw new Error('E2E_TEST_MODE=true is required');if(!process.env.DATABASE_URL)throw new Error('DATABASE_URL is missing');const sql=neon(process.env.DATABASE_URL);const userId='e2e-learning-dashboard';const identity=createHash('sha256').update(userId).digest('hex');await sql`DELETE FROM lessons WHERE user_id=${userId}`;await sql`DELETE FROM generated_topics WHERE user_id=${userId}`;await sql`DELETE FROM error_events WHERE user_id=${userId}`;await sql`DELETE FROM rate_limit_windows WHERE identity=${identity}`;await sql`DELETE FROM generation_leases WHERE identity=${identity}`;console.log('E2E teacher workspace reset.');

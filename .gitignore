@@ -3,6 +3,7 @@ dist/
 *.tsbuildinfo
 *.log
 *-smoke.png
+*-e2e.png
 .env
 .env.*
 !.env.example

@@ -34,6 +34,14 @@ function publicError(error){
 }
 
 export async function routeStructured({purpose,schema,system,prompt,userId,feature=purpose,description}){
+  if(process.env.E2E_TEST_MODE==='true'&&process.env.VERCEL_ENV!=='production'){
+    const parsed=JSON.parse(prompt);let data;
+    if(purpose==='topic')data={title:parsed.requestedTopic,subject:'E2E Science',level:parsed.learnerLevel,hook:'What would prove your explanation works in a completely new case?',misconceptions:['The visible pattern is the underlying cause','One example proves the rule for every case','A definition alone explains the mechanism','Exceptions make the entire model useless'],mustHit:['Name the causal mechanism','Distinguish evidence from assumption','Transfer the model to a new case','State the boundary conditions']};
+    if(purpose==='student')data={reply:'That mechanism helps. So the sign changes because reversing a reversal restores the original direction?',beliefs:parsed.currentBeliefs.map((belief,index)=>({...belief,confidence:index?Math.max(.18,belief.confidence-.25):.12,status:index?'shaky':'solid',...(index?{}:{replacement:'Reversing a negative direction twice produces a positive direction.'})}))};
+    if(purpose==='examiner')data={questions:Array.from({length:5},(_,index)=>{const belief=parsed.studentBeliefs[index%parsed.studentBeliefs.length];return {q:`Transfer question ${index+1}`,answer:belief.replacement||`I am still uncertain about ${belief.claim}`,score:belief.status==='solid'?20:12,why:belief.status==='solid'?'The corrected mechanism transfers cleanly.':'The model is only partly corrected.',beliefId:belief.id}}),total:0,verdict:'The explanation created a transferable model with a few edges left to sharpen.'};
+    if(purpose==='diagnosis'){const teacher=parsed.transcript.find(message=>message.role==='teacher');data={gaps:teacher?[{messageId:teacher.id,quote:teacher.text.slice(0,Math.min(40,teacher.text.length)),type:'missing_step',cost:8,fix:'Name the reversal mechanism before applying the sign rule.'}]:[],strongestMoment:teacher?{messageId:teacher.id,why:'It connected the rule to a concrete mechanism.'}:undefined,nextChallenge:'Explain the same mechanism with debt and direction.'}}
+    return {data:schema.parse(data),model:'test/deterministic',usage:{inputTokens:100,outputTokens:100,totalTokens:200},routing:{purpose,primary:'test/deterministic',resolvedModel:'test/deterministic',candidates:['test/deterministic'],failover:false,durationMs:1}};
+  }
   const models=routeFor(purpose);
   const primary=models[0];
   const started=Date.now();

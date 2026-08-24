@@ -9,8 +9,9 @@ import {connectTokenGetter} from './auth/token';
 import {useProtegeAuth} from './auth/context';
 import {useEffect} from 'react';
 import {LessonVault,PersistencePulse} from './components/LessonVault';
+import {Dashboard} from './components/Dashboard';
 
-const views={welcome:Welcome,setup:Setup,teach:Teaching,exam:Exam,results:Results};
+const views={welcome:Welcome,dashboard:Dashboard,setup:Setup,teach:Teaching,exam:Exam,results:Results};
 
 export function App(){
   const stage=useStore(s=>s.stage);

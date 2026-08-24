@@ -32,6 +32,8 @@ Signed-in users can inspect private 24-hour routing telemetry at `/api/model-sta
 
 Production guardrails use atomic Neon counters for per-user API budgets and expiring generation leases to stop duplicate paid calls. Limits return standard `RateLimit-*` and `Retry-After` headers. Server, provider, database, speech, and browser failures emit correlated structured logs and sanitized `error_events`; users receive a short incident code instead of provider internals. `/api/model-status` includes the signed-in user's 24-hour model and error health.
 
+The signed-in Learning Map at `/api/dashboard` converts private lesson history into score trajectory, misconception mastery, subject strength, recurring teaching gaps, recent-session restoration, next-best action, and model health. Its hosted E2E harness uses `E2E_TEST_MODE=true` only outside production, a dedicated test identity, deterministic validated model outputs, and real Neon persistence. Run `scripts/cleanup-e2e.mjs`, `tests/e2e-learning-dashboard.mjs`, and `scripts/verify-e2e.mjs` in that order against an isolated preview.
+
 ## What’s included
 
 - 24 misconception-led topics across biology, physics, chemistry, maths, computer science, psychology, earth science, and economics
