@@ -11,7 +11,7 @@ class ModelUnavailableError extends Error{constructor(){super('Gemini is tempora
 const modelPools={
   student:['gemini-3.6-flash','gemini-3.5-flash-lite','gemini-2.5-flash-lite'],
   examiner:['gemini-3.5-flash','gemini-3.1-flash-lite','gemini-2.5-flash'],
-  diagnosis:['gemini-3.7-flash','gemini-3.1-pro-preview','gemini-2.5-pro']
+  diagnosis:['gemini-3.7-flash','gemini-3.1-pro-preview','gemini-3.5-flash-lite']
 };
 
 async function callGemini(system,user,model){
@@ -20,7 +20,7 @@ async function callGemini(system,user,model){
   let response;
   try{response=await fetch(url,{method:'POST',signal:AbortSignal.timeout(18000),headers:{'content-type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{temperature:.35,responseMimeType:'application/json'}})});}
   catch(error){if(error?.name==='TimeoutError'||error?.name==='AbortError')throw new ModelUnavailableError();throw error;}
-  if(!response.ok){const data=await response.json().catch(()=>null);if(response.status===429)throw new QuotaError();if(response.status===503)throw new ModelUnavailableError();throw new Error(`Gemini ${response.status}: ${JSON.stringify(data)}`);}
+  if(!response.ok){const data=await response.json().catch(()=>null);if(response.status===429)throw new QuotaError();if(response.status===404||response.status===503)throw new ModelUnavailableError();throw new Error(`Gemini ${response.status}: ${JSON.stringify(data)}`);}
   const data=await response.json();
   return data.candidates?.[0]?.content?.parts?.map(part=>part.text??'').join('')??'';
 }
