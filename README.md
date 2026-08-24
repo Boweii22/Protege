@@ -26,7 +26,9 @@ npm install
 npm run dev
 ```
 
-Set `GEMINI_API_KEY` in Vercel or `.env.local`; `GEMINI_MODEL` defaults to `gemini-3.6-flash`. AI Gateway is also supported through `AI_GATEWAY_API_KEY` and `AI_MODEL`. There are no fabricated fallback conversations or scores: provider failures are shown as errors and can be retried.
+Production inference runs through Vercel AI Gateway using deployment OIDC. Each task has a purpose-built, cross-provider route: fast premium models for Maya and Topic Forge; stronger reasoning models for the blind exam and diagnosis; and a low-cost continuity model last. Gateway calls carry private per-user attribution and feature tags, use bounded retries/timeouts, and persist the resolved model, tokens, latency, and failover state. Override a route with comma-separated `AI_<PURPOSE>_MODELS`; see `.env.example`. There are no fabricated fallback conversations or scores.
+
+Signed-in users can inspect private 24-hour routing telemetry at `/api/model-status`. Set spend limits and per-user rate limits in Vercel AI Gateway; the API distinguishes capacity, budget, and provider failures without leaking upstream credentials or raw provider errors.
 
 ## What’s included
 

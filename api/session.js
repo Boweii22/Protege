@@ -3,70 +3,14 @@ import {requireAuth} from '../server/auth.js';
 import {randomUUID} from 'node:crypto';
 import {completeGeneration,createGeneration,failGeneration} from '../server/db.js';
 import {normalizeExam} from '../server/scoring.js';
-import {createGateway,generateText,Output} from 'ai';
+import {routeStructured,ModelRoutingError} from '../server/ai-router.js';
 
 const belief=z.object({id:z.string(),claim:z.string(),confidence:z.number().min(0).max(1),status:z.enum(['misconception','shaky','solid']),replacement:z.string().optional()});
 const studentOutput=z.object({reply:z.string(),beliefs:z.array(belief)});
 const examinerOutput=z.object({questions:z.array(z.object({q:z.string(),answer:z.string(),score:z.number().min(0).max(20),why:z.string(),beliefId:z.string()})).min(5).max(7),total:z.number(),verdict:z.string()});
 const diagnosisOutput=z.object({gaps:z.array(z.object({messageId:z.string(),quote:z.string(),type:z.string(),cost:z.number(),fix:z.string()})),strongestMoment:z.object({messageId:z.string(),why:z.string()}).optional(),nextChallenge:z.string().optional()});
 const input=z.object({lessonId:z.string().uuid(),action:z.enum(['student','exam']),topic:z.object({id:z.string(),title:z.string(),level:z.string(),misconceptions:z.array(z.string()),mustHit:z.array(z.string())}),persona:z.string().optional(),messages:z.array(z.object({id:z.string(),role:z.enum(['teacher','student']),text:z.string(),time:z.string()})),beliefs:z.array(belief)});
-class QuotaError extends Error{constructor(){super('Every available Gemini free-tier model is out of quota for this project today. Add billing or try again after the daily quota resets.');}}
-class ModelUnavailableError extends Error{constructor(){super('Gemini is temporarily overloaded across all available models. Please try again shortly.');}}
-
-const modelPools={
-  student:['gemini-3.6-flash','gemini-3.5-flash-lite','gemini-2.5-flash-lite'],
-  examiner:['gemini-3.5-flash','gemini-3.1-flash-lite','gemini-2.5-flash'],
-  diagnosis:['gemini-3.7-flash','gemini-3.1-pro-preview','gemini-3.5-flash-lite']
-};
-
-function parseModelJson(text){
-  const start=text.indexOf('{');
-  if(start<0)throw new SyntaxError('The model response did not contain a JSON object.');
-  let depth=0,inString=false,escaped=false;
-  for(let index=start;index<text.length;index++){
-    const char=text[index];
-    if(inString){
-      if(escaped)escaped=false;
-      else if(char==='\\')escaped=true;
-      else if(char==='"')inString=false;
-      continue;
-    }
-    if(char==='"'){inString=true;continue;}
-    if(char==='{')depth++;
-    if(char==='}'&&--depth===0)return JSON.parse(text.slice(start,index+1));
-  }
-  throw new SyntaxError('The model response contained incomplete JSON.');
-}
-
-async function callGemini(system,user,model){
-  const key=process.env.GEMINI_API_KEY;
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
-  let response;
-  try{response=await fetch(url,{method:'POST',signal:AbortSignal.timeout(18000),headers:{'content-type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{temperature:.35,responseMimeType:'application/json'}})});}
-  catch(error){if(error?.name==='TimeoutError'||error?.name==='AbortError')throw new ModelUnavailableError();throw error;}
-  if(!response.ok){const data=await response.json().catch(()=>null);if(response.status===429)throw new QuotaError();if(response.status===404||response.status===503)throw new ModelUnavailableError();throw new Error(`Gemini ${response.status}: ${JSON.stringify(data)}`);}
-  const data=await response.json();
-  return {text:data.candidates?.[0]?.content?.parts?.map(part=>part.text??'').join('')??'',usage:data.usageMetadata??{}};
-}
-async function callGateway(system,user,schema,purpose){
-  const token=process.env.VERCEL_OIDC_TOKEN||process.env.AI_GATEWAY_API_KEY;if(!token)throw new Error('MODEL_NOT_CONFIGURED');
-  const model=process.env[`AI_${purpose.toUpperCase()}_MODEL`]||'google/gemini-2.5-flash-lite';const aiGateway=createGateway({apiKey:token});
-  const result=await generateText({model:aiGateway(model),output:Output.object({schema}),system,prompt:user});return {data:result.output,model,usage:result.usage};
-}
-async function generate(system,user,schema,purpose){
-  if(!process.env.GEMINI_API_KEY&&!process.env.AI_GATEWAY_API_KEY&&!process.env.VERCEL_OIDC_TOKEN)throw new Error('MODEL_NOT_CONFIGURED');let lastError;
-  if(process.env.GEMINI_API_KEY){
-    const configured=process.env[`GEMINI_${purpose.toUpperCase()}_MODEL`];
-    const models=[configured,process.env.GEMINI_MODEL,...modelPools[purpose]].filter((model,index,list)=>model&&list.indexOf(model)===index);
-    for(const model of models){
-      try{const generated=await callGemini(system,user,model);return {data:schema.parse(parseModelJson(generated.text)),model,usage:generated.usage};}
-      catch(error){lastError=error;console.warn('[api/session] Gemini unavailable',{purpose,model,reason:error instanceof Error?error.message.slice(0,120):'unknown'});if(error instanceof Error&&error.message.includes('API key not valid'))break;}
-    }
-  }
-  try{return await callGateway(system,user,schema,purpose)}catch(error){throw error??lastError??new ModelUnavailableError()}
-}
-
-async function trackedGenerate({userId,lessonId,kind,system,user,schema,purpose}){const id=randomUUID();const started=Date.now();await createGeneration({id,userId,lessonId,kind,model:process.env.GEMINI_MODEL||process.env.AI_MODEL||'automatic',input:JSON.parse(user)});try{const generated=await generate(system,user,schema,purpose);await completeGeneration({id,model:generated.model,output:generated.data,usage:generated.usage,durationMs:Date.now()-started});return generated.data}catch(error){await failGeneration(id,error instanceof Error?error.message:'Unknown generation error').catch(()=>{});throw error}}
+async function trackedGenerate({userId,lessonId,kind,system,user,schema,purpose}){const id=randomUUID();const started=Date.now();await createGeneration({id,userId,lessonId,kind,model:'gateway/automatic',input:JSON.parse(user)});try{const generated=await routeStructured({purpose,userId,feature:kind,system,prompt:user,schema});await completeGeneration({id,model:generated.model,output:generated.data,usage:generated.usage,routing:generated.routing,durationMs:Date.now()-started});return generated.data}catch(error){await failGeneration(id,error instanceof Error?error.message:'Unknown generation error').catch(()=>{});throw error}}
 
 export default async function handler(request,response){
   if(request.method!=='POST')return response.status(405).json({error:'Method not allowed'});
@@ -81,5 +25,5 @@ export default async function handler(request,response){
     const examUser=JSON.stringify({correctModel:body.topic.mustHit,studentBeliefs:body.beliefs});const generatedExam=await trackedGenerate({userId:session.sub,lessonId:body.lessonId,kind:'blind_exam',system:examinerSystem,user:examUser,schema:examinerOutput,purpose:'examiner'});const exam=normalizeExam({...generatedExam,questions:generatedExam.questions.slice(0,5)});
     const diagnosisSystem=`You are a precise, kind teaching coach. You may now see the transcript and the already-completed blind exam. For each material lost-point cause, quote an exact substring from one teacher message and map it to that message id. Return JSON exactly shaped as {"gaps":[{"messageId":"...","quote":"exact substring","type":"vague|missing_step|undefined_term|asserted_not_explained|factually_wrong","cost":0,"fix":"one concrete replacement sentence"}],"strongestMoment":{"messageId":"...","why":"..."},"nextChallenge":"..."}. Do not invent quotes.`;
     const diagnosisUser=JSON.stringify({topic:body.topic,transcript:body.messages,studentBeliefs:body.beliefs,exam});const diagnosis=await trackedGenerate({userId:session.sub,lessonId:body.lessonId,kind:'teaching_diagnosis',system:diagnosisSystem,user:diagnosisUser,schema:diagnosisOutput,purpose:'diagnosis'});return response.status(200).json({...exam,...diagnosis});
-  }catch(error){const message=error instanceof Error?error.message:'Unknown error';console.error('[api/session]',message);if(error instanceof QuotaError)return response.status(429).json({error:message});return response.status(message==='MODEL_NOT_CONFIGURED'?503:500).json({error:message});}
+  }catch(error){const message=error instanceof Error?error.message:'Unknown error';console.error('[api/session]',message);return response.status(error instanceof ModelRoutingError?(typeof error.status==='number'?error.status:503):500).json({error:message});}
 }
