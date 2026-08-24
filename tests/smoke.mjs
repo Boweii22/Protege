@@ -12,11 +12,11 @@ page.on('console', message => {
 page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
 
 await page.goto(process.env.PROTEGE_URL ?? 'http://127.0.0.1:5175', { waitUntil: 'networkidle' });
-await page.getByRole('button', { name: /awaken your student/i }).click();
+await page.getByRole('button', { name: /meet Maya/i }).click();
 if (process.env.PROTEGE_TOPIC) {
   await page.getByRole('button', { name: new RegExp(process.env.PROTEGE_TOPIC, 'i') }).click();
 }
-await page.getByRole('button', { name: /initialise lesson/i }).click();
+await page.getByRole('button', { name: /begin the lesson/i }).click();
 await page.waitForTimeout(500);
 const lessonVisible = await page.getByText('Make it click.').isVisible().catch(() => false);
 await page.getByLabel('Your explanation').fill('A plant builds glucose by fixing carbon from carbon dioxide in the air.');

@@ -6,11 +6,11 @@ page.on('console',message=>{if(message.type()==='error')errors.push(message.text
 page.on('pageerror',error=>errors.push(error.message));
 await page.goto('http://127.0.0.1:5174',{waitUntil:'networkidle'});
 await page.screenshot({path:'welcome-redesign.png',fullPage:true});
-await page.getByRole('button',{name:/awaken your student/i}).click();
+await page.getByRole('button',{name:/meet Maya/i}).click();
 await page.waitForTimeout(500);
 await page.screenshot({path:'setup-redesign.png',fullPage:true});
 await page.getByRole('button',{name:/negative/i}).click();
-await page.getByRole('button',{name:/initialise lesson/i}).click();
+await page.getByRole('button',{name:/begin the lesson/i}).click();
 await page.waitForTimeout(500);
 await page.screenshot({path:'lesson-redesign.png',fullPage:true});
 const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});
