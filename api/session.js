@@ -5,7 +5,7 @@ const studentOutput=z.object({reply:z.string(),beliefs:z.array(belief)});
 const examinerOutput=z.object({questions:z.array(z.object({q:z.string(),answer:z.string(),score:z.number(),why:z.string(),beliefId:z.string()})).length(5),total:z.number(),verdict:z.string()});
 const diagnosisOutput=z.object({gaps:z.array(z.object({messageId:z.string(),quote:z.string(),type:z.string(),cost:z.number(),fix:z.string()})),strongestMoment:z.object({messageId:z.string(),why:z.string()}).optional(),nextChallenge:z.string().optional()});
 const input=z.object({action:z.enum(['student','exam']),topic:z.object({id:z.string(),title:z.string(),level:z.string(),misconceptions:z.array(z.string()),mustHit:z.array(z.string())}),persona:z.string().optional(),messages:z.array(z.object({id:z.string(),role:z.enum(['teacher','student']),text:z.string(),time:z.string()})),beliefs:z.array(belief)});
-class QuotaError extends Error{constructor(seconds){super(`Gemini is busy. Retrying automatically in ${seconds} seconds.`);this.retryAfter=seconds;}}
+class QuotaError extends Error{constructor(seconds){super(`Gemini's free quota window is full. Please try again in about ${seconds} seconds.`);this.retryAfter=seconds;}}
 
 async function callGemini(system,user){
   const key=process.env.GEMINI_API_KEY;

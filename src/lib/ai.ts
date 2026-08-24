@@ -8,7 +8,7 @@ const examSchema=z.object({questions:z.array(z.object({q:z.string(),answer:z.str
 const wait=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 async function request<T>(body:unknown,schema:z.ZodType<T>,attempt=0):Promise<T>{
   const response=await fetch('/api/session',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-  if(!response.ok){const data=await response.json().catch(()=>null) as {error?:string;retryAfter?:number}|null;if(response.status===429&&attempt===0){await wait(Math.min(65,Math.max(1,data?.retryAfter??60))*1000);return request(body,schema,1)}throw new Error(data?.error??(response.status===503?'Live model is not configured on this deployment.':`Model request failed (${response.status}).`))}
+  if(!response.ok){const data=await response.json().catch(()=>null) as {error?:string;retryAfter?:number}|null;if(response.status===429&&attempt<2){const seconds=Math.min(70,Math.max(1,data?.retryAfter??60)+5);await wait(seconds*1000);return request(body,schema,attempt+1)}throw new Error(data?.error??(response.status===503?'Live model is not configured on this deployment.':`Model request failed (${response.status}).`))}
   return schema.parse(await response.json());
 }
 export const teachStudent=(topic:Topic,persona:string,messages:Message[],beliefs:Belief[])=>request({action:'student',topic,persona,messages,beliefs:beliefs.map(({x,y,...belief})=>belief)},studentSchema);
