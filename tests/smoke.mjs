@@ -12,19 +12,19 @@ page.on('console', message => {
 page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
 
 await page.goto(process.env.PROTEGE_URL ?? 'http://127.0.0.1:5175', { waitUntil: 'networkidle' });
-await page.getByRole('button', { name: /meet your student/i }).click();
+await page.getByRole('button', { name: /awaken your student/i }).click();
 if (process.env.PROTEGE_TOPIC) {
   await page.getByRole('button', { name: new RegExp(process.env.PROTEGE_TOPIC, 'i') }).click();
 }
-await page.getByRole('button', { name: /begin the lesson/i }).click();
+await page.getByRole('button', { name: /initialise lesson/i }).click();
 await page.waitForTimeout(500);
-const lessonVisible = await page.getByText('Teach it plainly.').isVisible().catch(() => false);
+const lessonVisible = await page.getByText('Make it click.').isVisible().catch(() => false);
 await page.getByLabel('Your explanation').fill('A plant builds glucose by fixing carbon from carbon dioxide in the air.');
 await page.getByRole('button', { name: /send explanation/i }).click();
 const replyVisible = await page.locator('.messages article.student').count() >= 2;
 await page.getByRole('button', { name: /test her/i }).click();
 await page.waitForTimeout(500);
-const examVisible = await page.getByText('Maya is being tested.').isVisible().catch(() => false);
+const examVisible = await page.getByText('The lesson is sealed.').isVisible().catch(() => false);
 const resultsVisible = await page.getByText('Maya scored').waitFor({state:'visible',timeout:60000}).then(()=>true).catch(()=>false);
 const bodyText = await page.locator('body').innerText();
 console.log(JSON.stringify({ lessonVisible, replyVisible, examVisible, resultsVisible, bodyLength: bodyText.length, bodyPreview: bodyText.slice(0, 240), errors }, null, 2));
