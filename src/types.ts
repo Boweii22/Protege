@@ -6,3 +6,5 @@ export type ExamItem={q:string;answer:string;score:number;why:string;beliefId:st
 export type Gap={messageId:string;quote:string;type:string;cost:number;fix:string};
 export type ExamResult={questions:ExamItem[];total:number;verdict:string;gaps:Gap[];strongestMoment?:{messageId:string;why:string};nextChallenge?:string};
 export type Stage='welcome'|'setup'|'teach'|'exam'|'results';
+export type LessonSnapshot={id:string;topic:Topic;persona:string;stage:'teach'|'exam'|'results';messages:Message[];beliefs:Belief[];exam:ExamResult|null;turn:number;status?:'active'|'complete';createdAt?:string;updatedAt?:string};
+export type LessonSummary=Omit<LessonSnapshot,'messages'|'beliefs'|'exam'> & {messageCount:number;score:number|null};
