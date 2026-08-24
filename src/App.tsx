@@ -1,3 +1,14 @@
-import {AnimatePresence,motion} from 'framer-motion';import {useStore} from './store';import {Welcome} from './components/Welcome';import {Setup} from './components/Setup';import {Teaching} from './components/Teaching';import {Exam} from './components/Exam';import {Results} from './components/Results';
+import {useStore} from './store';
+import {Welcome} from './components/Welcome';
+import {Setup} from './components/Setup';
+import {Teaching} from './components/Teaching';
+import {Exam} from './components/Exam';
+import {Results} from './components/Results';
+
 const views={welcome:Welcome,setup:Setup,teach:Teaching,exam:Exam,results:Results};
-export function App(){const stage=useStore(s=>s.stage);const View=views[stage];return <AnimatePresence mode="wait"><motion.div key={stage} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.25}}><View/></motion.div></AnimatePresence>}
+
+export function App(){
+  const stage=useStore(s=>s.stage);
+  const View=views[stage];
+  return <div data-stage={stage}><View/></div>;
+}
