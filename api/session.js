@@ -6,6 +6,7 @@ const examinerOutput=z.object({questions:z.array(z.object({q:z.string(),answer:z
 const diagnosisOutput=z.object({gaps:z.array(z.object({messageId:z.string(),quote:z.string(),type:z.string(),cost:z.number(),fix:z.string()})),strongestMoment:z.object({messageId:z.string(),why:z.string()}).optional(),nextChallenge:z.string().optional()});
 const input=z.object({action:z.enum(['student','exam']),topic:z.object({id:z.string(),title:z.string(),level:z.string(),misconceptions:z.array(z.string()),mustHit:z.array(z.string())}),persona:z.string().optional(),messages:z.array(z.object({id:z.string(),role:z.enum(['teacher','student']),text:z.string(),time:z.string()})),beliefs:z.array(belief)});
 class QuotaError extends Error{constructor(){super('Every available Gemini free-tier model is out of quota for this project today. Add billing or try again after the daily quota resets.');}}
+class ModelUnavailableError extends Error{constructor(){super('Gemini is temporarily overloaded across all available models. Please try again shortly.');}}
 
 const modelPools={
   student:['gemini-3.6-flash','gemini-3.5-flash-lite','gemini-2.5-flash-lite'],
@@ -17,7 +18,7 @@ async function callGemini(system,user,model){
   const key=process.env.GEMINI_API_KEY;
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const response=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{temperature:.35,responseMimeType:'application/json'}})});
-  if(!response.ok){const data=await response.json().catch(()=>null);if(response.status===429)throw new QuotaError();throw new Error(`Gemini ${response.status}: ${JSON.stringify(data)}`);}
+  if(!response.ok){const data=await response.json().catch(()=>null);if(response.status===429)throw new QuotaError();if(response.status===503)throw new ModelUnavailableError();throw new Error(`Gemini ${response.status}: ${JSON.stringify(data)}`);}
   const data=await response.json();
   return data.candidates?.[0]?.content?.parts?.map(part=>part.text??'').join('')??'';
 }
@@ -33,11 +34,12 @@ async function generate(system,user,schema,purpose){
   if(process.env.GEMINI_API_KEY){
     const configured=process.env[`GEMINI_${purpose.toUpperCase()}_MODEL`];
     const models=[configured,process.env.GEMINI_MODEL,...modelPools[purpose]].filter((model,index,list)=>model&&list.indexOf(model)===index);
+    let lastRetryableError;
     for(const model of models){
       try{return schema.parse(JSON.parse(await callGemini(system,user,model)));}
-      catch(error){if(error instanceof QuotaError){console.warn('[api/session] quota exhausted',{purpose,model});continue;}throw error;}
+      catch(error){if(error instanceof QuotaError||error instanceof ModelUnavailableError){lastRetryableError=error;console.warn('[api/session] model unavailable',{purpose,model,reason:error.constructor.name});continue;}throw error;}
     }
-    throw new QuotaError();
+    throw lastRetryableError??new ModelUnavailableError();
   }
   return schema.parse(JSON.parse(await callGateway(system,user)));
 }
