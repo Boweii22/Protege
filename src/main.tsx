@@ -11,4 +11,7 @@ import './dashboard.css';
 import './dashboard-entry.css';
 import './settings.css';
 import './voice-capture.css';
+import './onboarding.css';
+import './account-page.css';
+import './polish.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ErrorBoundary><ProtegeAuthProvider><App/></ProtegeAuthProvider></ErrorBoundary></React.StrictMode>);

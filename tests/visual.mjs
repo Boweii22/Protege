@@ -2,6 +2,7 @@ import {chromium} from 'playwright-core';
 const browser=await chromium.launch({executablePath:'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',headless:true});
 const errors=[];
 const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+await page.addInitScript(()=>localStorage.setItem('protege.onboarded.e2e@protege.test','true'));
 page.on('console',message=>{if(message.type()==='error')errors.push(message.text())});
 page.on('pageerror',error=>errors.push(error.message));
 await page.goto('http://127.0.0.1:5174',{waitUntil:'networkidle'});

@@ -5,6 +5,7 @@ const browser = await chromium.launch({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+await page.addInitScript(()=>localStorage.setItem('protege.onboarded.e2e@protege.test','true'));
 const errors = [];
 page.on('console', message => {
   if (message.type() === 'error' && !message.text().includes('Failed to load resource')) errors.push(`console: ${message.text()}`);

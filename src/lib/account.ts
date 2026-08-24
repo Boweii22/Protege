@@ -1,0 +1,6 @@
+import {authenticatedHeaders} from '../auth/token';
+import {apiError} from './http';
+async function accountJson<T>(input:string,init:RequestInit){const response=await fetch(input,init);if(!response.ok)throw await apiError(response,'Your account request could not be completed.');return response.json() as Promise<T>}
+export async function updateProfile(firstName:string){return accountJson<{firstName:string;email:string}>('/api/account',{method:'PATCH',headers:{'content-type':'application/json',...await authenticatedHeaders()},body:JSON.stringify({firstName})})}
+export async function exportAccount(){const response=await fetch('/api/account?action=export',{headers:await authenticatedHeaders()});if(!response.ok)throw new Error((await response.json().catch(()=>null))?.error||'Your export could not be prepared.');const url=URL.createObjectURL(await response.blob());const link=document.createElement('a');link.href=url;link.download=`protege-export-${new Date().toISOString().slice(0,10)}.json`;link.click();URL.revokeObjectURL(url)}
+export async function deleteAccount(confirmation:string){return accountJson<{deleted:boolean}>('/api/account',{method:'DELETE',headers:{'content-type':'application/json',...await authenticatedHeaders()},body:JSON.stringify({confirmation})})}

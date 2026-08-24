@@ -12,16 +12,21 @@ import {LessonVault,PersistencePulse} from './components/LessonVault';
 import {Dashboard} from './components/Dashboard';
 import {Settings} from './components/Settings';
 import {usePreferences} from './lib/preferences';
+import {Account} from './components/Account';
+import {Onboarding} from './components/Onboarding';
+import {useState} from 'react';
 
-const views={welcome:Welcome,dashboard:Dashboard,setup:Setup,teach:Teaching,exam:Exam,results:Results,settings:Settings};
+const views={welcome:Welcome,dashboard:Dashboard,setup:Setup,teach:Teaching,exam:Exam,results:Results,settings:Settings,account:Account};
 
 export function App(){
   const stage=useStore(s=>s.stage);
   const auth=useProtegeAuth();
+  const [onboardingDismissed,setOnboardingDismissed]=useState(false);
   const reducedMotion=usePreferences(state=>state.reducedMotion);const highContrast=usePreferences(state=>state.highContrast);
   useEffect(()=>connectTokenGetter(auth.getToken),[auth.getToken]);
   useEffect(()=>{document.documentElement.dataset.motion=reducedMotion?'reduced':'full';document.documentElement.dataset.contrast=highContrast?'high':'standard'},[reducedMotion,highContrast]);
   const View=views[stage];
   if(stage!=='welcome'&&(!auth.configured||!auth.ready||!auth.signedIn))return <AuthenticationWall/>;
-  return <div data-stage={stage}><View/>{stage==='welcome'?<LessonVault/>:<PersistencePulse/>}</div>;
+  const needsOnboarding=stage==='welcome'&&auth.signedIn&&!onboardingDismissed&&localStorage.getItem(`protege.onboarded.${auth.user?.email||'teacher'}`)!=='true';
+  return <div data-stage={stage}><View/>{stage==='welcome'?<LessonVault/>:<PersistencePulse/>}{needsOnboarding?<Onboarding onDone={()=>setOnboardingDismissed(true)}/>:null}</div>;
 }
