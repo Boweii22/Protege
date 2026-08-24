@@ -9,4 +9,6 @@ import './vault.css';
 import './forge.css';
 import './dashboard.css';
 import './dashboard-entry.css';
+import './settings.css';
+import './voice-capture.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ErrorBoundary><ProtegeAuthProvider><App/></ProtegeAuthProvider></ErrorBoundary></React.StrictMode>);
