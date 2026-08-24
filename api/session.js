@@ -17,7 +17,9 @@ const modelPools={
 async function callGemini(system,user,model){
   const key=process.env.GEMINI_API_KEY;
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
-  const response=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{temperature:.35,responseMimeType:'application/json'}})});
+  let response;
+  try{response=await fetch(url,{method:'POST',signal:AbortSignal.timeout(18000),headers:{'content-type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{temperature:.35,responseMimeType:'application/json'}})});}
+  catch(error){if(error?.name==='TimeoutError'||error?.name==='AbortError')throw new ModelUnavailableError();throw error;}
   if(!response.ok){const data=await response.json().catch(()=>null);if(response.status===429)throw new QuotaError();if(response.status===503)throw new ModelUnavailableError();throw new Error(`Gemini ${response.status}: ${JSON.stringify(data)}`);}
   const data=await response.json();
   return data.candidates?.[0]?.content?.parts?.map(part=>part.text??'').join('')??'';
