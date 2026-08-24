@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import type {Belief,ExamResult,Message,Topic} from '../types';
 import {authenticatedHeaders} from '../auth/token';
+import {apiError} from './http';
 
 const beliefSchema=z.object({id:z.string(),claim:z.string(),confidence:z.number().min(0).max(1),status:z.enum(['misconception','shaky','solid']),replacement:z.string().optional()});
 const studentSchema=z.object({reply:z.string(),beliefs:z.array(beliefSchema)});
@@ -8,7 +9,7 @@ const examSchema=z.object({questions:z.array(z.object({q:z.string(),answer:z.str
 
 async function request<T>(body:unknown,schema:z.ZodType<T>):Promise<T>{
   const response=await fetch('/api/session',{method:'POST',headers:{'content-type':'application/json',...await authenticatedHeaders()},body:JSON.stringify(body)});
-  if(!response.ok){const data=await response.json().catch(()=>null) as {error?:string}|null;throw new Error(data?.error??(response.status===503?'Live model is not configured on this deployment.':`Model request failed (${response.status}).`))}
+  if(!response.ok)throw await apiError(response,response.status===503?'The live teaching studio is temporarily unavailable.':`Model request failed (${response.status}).`)
   return schema.parse(await response.json());
 }
 export const teachStudent=(lessonId:string,topic:Topic,persona:string,messages:Message[],beliefs:Belief[])=>request({lessonId,action:'student',topic,persona,messages,beliefs:beliefs.map(({x:_x,y:_y,...belief})=>belief)},studentSchema);

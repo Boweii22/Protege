@@ -50,4 +50,11 @@ await sql`CREATE TABLE IF NOT EXISTS generated_topics (
 )`;
 await sql`CREATE INDEX IF NOT EXISTS generated_topics_user_idx ON generated_topics(user_id,updated_at DESC)`;
 await sql`ALTER TABLE generated_topics ADD COLUMN IF NOT EXISTS routing JSONB NOT NULL DEFAULT '{}'::jsonb`;
+await sql`CREATE TABLE IF NOT EXISTS rate_limit_windows (bucket TEXT NOT NULL,identity TEXT NOT NULL,window_started TIMESTAMPTZ NOT NULL DEFAULT NOW(),request_count INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(bucket,identity))`;
+await sql`CREATE INDEX IF NOT EXISTS rate_limit_window_age_idx ON rate_limit_windows(window_started)`;
+await sql`CREATE TABLE IF NOT EXISTS generation_leases (identity TEXT NOT NULL,lane TEXT NOT NULL,lease_id UUID NOT NULL,expires_at TIMESTAMPTZ NOT NULL,PRIMARY KEY(identity,lane))`;
+await sql`CREATE INDEX IF NOT EXISTS generation_lease_expiry_idx ON generation_leases(expires_at)`;
+await sql`CREATE TABLE IF NOT EXISTS error_events (incident_id TEXT PRIMARY KEY,request_id TEXT NOT NULL,user_id TEXT,route TEXT NOT NULL,kind TEXT NOT NULL,status_code INTEGER NOT NULL,message TEXT NOT NULL,fingerprint TEXT NOT NULL,duration_ms INTEGER NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+await sql`CREATE INDEX IF NOT EXISTS errors_created_idx ON error_events(created_at DESC)`;
+await sql`CREATE INDEX IF NOT EXISTS errors_fingerprint_idx ON error_events(fingerprint,created_at DESC)`;
 console.log('Protégé persistence schema is ready.');

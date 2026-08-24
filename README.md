@@ -30,6 +30,8 @@ Production inference runs through Vercel AI Gateway using deployment OIDC. Each 
 
 Signed-in users can inspect private 24-hour routing telemetry at `/api/model-status`. Set spend limits and per-user rate limits in Vercel AI Gateway; the API distinguishes capacity, budget, and provider failures without leaking upstream credentials or raw provider errors.
 
+Production guardrails use atomic Neon counters for per-user API budgets and expiring generation leases to stop duplicate paid calls. Limits return standard `RateLimit-*` and `Retry-After` headers. Server, provider, database, speech, and browser failures emit correlated structured logs and sanitized `error_events`; users receive a short incident code instead of provider internals. `/api/model-status` includes the signed-in user's 24-hour model and error health.
+
 ## What’s included
 
 - 24 misconception-led topics across biology, physics, chemistry, maths, computer science, psychology, earth science, and economics
