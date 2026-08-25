@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Protégé — Final Closing</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600&family=Syne:wght@600;700&display=swap');
+    :root { --paper:#eee9df; --cream:#fffaf0; --ink:#17203b; --coral:#df321f; --blue:#2847c7; }
+    * { box-sizing:border-box; }
+    html,body { width:100%; height:100%; margin:0; overflow:hidden; background:var(--paper); color:var(--ink); cursor:none; }
+    body { font-family:Manrope, sans-serif; }
+    .stage { position:fixed; inset:0; overflow:hidden; isolation:isolate; background:var(--paper); }
+    .grid { position:absolute; inset:0; background-color:var(--paper); background-image:linear-gradient(rgba(23,32,59,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(23,32,59,.055) 1px,transparent 1px); background-size:28px 28px; }
+    .landing { position:absolute; inset:0; display:grid; grid-template-rows:9vh 1fr; opacity:0; transform:scale(1.025); }
+    .playing .landing { animation:landingIn .35s ease-out forwards, landingOut .6s 1.62s cubic-bezier(.65,0,.35,1) forwards; }
+    .nav { border-bottom:1px solid rgba(23,32,59,.32); display:flex; align-items:center; padding:0 4.3vw; background:rgba(238,233,223,.74); }
+    .mini-brand { display:flex; align-items:center; gap:11px; font:700 clamp(18px,1.45vw,28px) Syne; letter-spacing:-.06em; }
+    .sigil { position:relative; width:30px; height:30px; background:var(--ink); transform:rotate(-6deg); display:grid; place-items:center; }
+    .sigil i { position:absolute; width:4px; height:4px; border-radius:50%; background:var(--cream); }
+    .sigil i:nth-child(1) { transform:translate(-6px,-3px); }
+    .sigil i:nth-child(2) { transform:translate(6px,4px); }
+    .sigil i:nth-child(3) { width:8px; height:8px; }
+    .nav-note { margin-left:auto; font:500 clamp(7px,.5vw,10px) DM Mono; letter-spacing:.2em; opacity:.6; }
+    .hero { position:relative; padding:11vh 7vw; }
+    .eyebrow { display:block; color:var(--coral); font:500 clamp(8px,.61vw,12px) DM Mono; letter-spacing:.23em; margin-bottom:3vh; }
+    h1 { margin:0; font:700 clamp(68px,7vw,134px)/.84 Syne; letter-spacing:-.078em; max-width:1020px; }
+    h1 span { display:block; }
+    h1 span:nth-child(2) { margin-left:4vw; }
+    h1 span:nth-child(3) { margin-left:8vw; color:transparent; -webkit-text-stroke:1.7px var(--blue); position:relative; width:max-content; }
+    h1 span:nth-child(3)::after { content:""; position:absolute; left:-2%; right:-5%; bottom:-.1em; height:.055em; background:var(--coral); transform:rotate(-1deg); }
+    .question { position:absolute; right:9vw; top:12vh; color:var(--blue); font:700 clamp(140px,17vw,320px)/1 Syne; transform:rotate(4deg); opacity:.12; }
+    .wipe { position:absolute; inset:0; z-index:5; background:var(--paper); clip-path:inset(0 0 100% 0); }
+    .playing .wipe { animation:wipeIn .62s 1.72s cubic-bezier(.76,0,.24,1) forwards; }
+    .lockup { position:absolute; inset:0; z-index:6; display:grid; place-items:center; opacity:0; }
+    .playing .lockup { animation:lockupIn .7s 2.12s cubic-bezier(.16,1,.3,1) forwards; }
+    .lockup-inner { text-align:center; transform:translateY(-1vh); }
+    .mark { width:74px; height:74px; margin:0 auto 3vh; position:relative; transform:rotate(-7deg) scale(.7); background:var(--ink); box-shadow:9px 9px 0 var(--coral); opacity:0; }
+    .playing .mark { animation:markIn .55s 2.15s cubic-bezier(.16,1,.3,1) forwards; }
+    .mark i { position:absolute; width:9px; height:9px; border-radius:50%; background:var(--cream); left:50%; top:50%; }
+    .mark i:nth-child(1) { transform:translate(-25px,-13px); }
+    .mark i:nth-child(2) { transform:translate(15px,10px); }
+    .mark i:nth-child(3) { width:20px; height:20px; transform:translate(-10px,-10px); }
+    .name { margin:0; font:700 clamp(72px,8.1vw,156px)/.75 Syne; letter-spacing:-.085em; }
+    .tagline { margin:3.4vh 0 0; font:600 clamp(18px,1.45vw,29px) Syne; letter-spacing:-.025em; }
+    .tagline::after { content:""; display:block; width:46px; border-top:3px solid var(--coral); margin:2.6vh auto 0; transform:scaleX(0); }
+    .playing .tagline::after { animation:lineIn .4s 2.85s forwards; }
+    .url { position:absolute; left:50%; bottom:7vh; transform:translate(-50%,12px); opacity:0; font:500 clamp(9px,.72vw,14px) DM Mono; letter-spacing:.16em; }
+    .url::before { content:""; display:inline-block; width:6px; height:6px; margin:0 11px 1px 0; border-radius:50%; background:var(--coral); }
+    .playing .url { animation:urlIn .5s 3.12s forwards; }
+    .corner { position:absolute; z-index:7; width:34px; height:34px; opacity:0; }
+    .corner.tl { top:3.2vh; left:2vw; border-top:1px solid var(--ink); border-left:1px solid var(--ink); }
+    .corner.br { right:2vw; bottom:3.2vh; border-right:1px solid var(--ink); border-bottom:1px solid var(--ink); }
+    .playing .corner { animation:cornerIn .5s 2.7s forwards; }
+    .grain { position:absolute; inset:-60%; z-index:20; opacity:.055; pointer-events:none; mix-blend-mode:multiply; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); animation:grain .2s steps(2) infinite; }
+    .ready { position:absolute; inset:0; z-index:100; display:grid; place-items:center; background:#050505; cursor:pointer; transition:.25s; }
+    .ready.hidden { opacity:0; pointer-events:none; }
+    .ready button { cursor:pointer; padding:18px 25px; border:1px solid #46433e; background:transparent; color:#f1ede4; box-shadow:4px 4px 0 var(--coral); font:500 10px DM Mono; letter-spacing:.2em; }
+    .ready small { position:absolute; bottom:7vh; color:#6d6962; font:400 8px DM Mono; letter-spacing:.16em; }
+    .controls { position:absolute; right:22px; bottom:18px; z-index:90; display:flex; gap:7px; opacity:0; pointer-events:none; cursor:auto; }
+    .controls.visible { opacity:.65; pointer-events:auto; }
+    .controls button { cursor:pointer; padding:8px 11px; border:1px solid #a49e92; background:var(--paper); color:var(--ink); font:500 8px DM Mono; letter-spacing:.1em; }
+    @keyframes landingIn { to { opacity:1; transform:none; } }
+    @keyframes landingOut { to { opacity:0; transform:scale(.985); filter:blur(8px); } }
+    @keyframes wipeIn { to { clip-path:inset(0); } }
+    @keyframes lockupIn { to { opacity:1; } }
+    @keyframes markIn { to { opacity:1; transform:rotate(-7deg) scale(1); } }
+    @keyframes lineIn { to { transform:scaleX(1); } }
+    @keyframes urlIn { to { opacity:1; transform:translate(-50%,0); } }
+    @keyframes cornerIn { to { opacity:.38; } }
+    @keyframes grain { 0%{transform:translate(0)} 25%{transform:translate(2%,-2%)} 50%{transform:translate(-2%,2%)} 75%{transform:translate(1%,-1%)} 100%{transform:translate(-1%,1%)} }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-delay:0ms!important; } }
+  </style>
+</head>
+<body>
+  <main class="stage" id="stage">
+    <div class="grid"></div>
+    <section class="landing">
+      <header class="nav"><div class="mini-brand"><span class="sigil"><i></i><i></i><i></i></span><span>protégé</span></div><span class="nav-note">PROOF OF UNDERSTANDING</span></header>
+      <div class="hero"><span class="eyebrow">THE FEYNMAN TEST, WITH CONSEQUENCES</span><h1><span>If you know it,</span><span>make it click</span><span>for Maya.</span></h1><div class="question">?</div></div>
+    </section>
+    <div class="wipe"></div>
+    <section class="lockup">
+      <div class="lockup-inner"><div class="mark"><i></i><i></i><i></i></div><h2 class="name">PROTÉGÉ</h2><p class="tagline">Teach it. Prove it.</p></div>
+      <div class="url">protege-lac.vercel.app</div>
+    </section>
+    <i class="corner tl"></i><i class="corner br"></i><div class="grain"></div>
+    <div class="ready" id="ready"><button id="start">CLICK TO ARM FINAL SCENE</button><small>4.0 SECONDS · AUDIO ON · PRESS F FOR FULLSCREEN</small></div>
+    <div class="controls" id="controls"><button id="replay">R · REPLAY</button><button id="full">F · FULLSCREEN</button></div>
+  </main>
+  <script>
+    const stage=document.querySelector('#stage'),ready=document.querySelector('#ready'),controls=document.querySelector('#controls');
+    let audio,finishTimer,controlTimer;
+    function tone(){if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();const now=audio.currentTime;[196,293.66,440].forEach((hz,i)=>{const osc=audio.createOscillator(),gain=audio.createGain();osc.type='sine';osc.frequency.value=hz;gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.025,now+.06+i*.035);gain.gain.exponentialRampToValueAtTime(.0001,now+1.35);osc.connect(gain).connect(audio.destination);osc.start(now+i*.035);osc.stop(now+1.4)});}
+    function play(){clearTimeout(finishTimer);stage.classList.remove('playing');controls.classList.remove('visible');void stage.offsetWidth;ready.classList.add('hidden');stage.classList.add('playing');setTimeout(tone,2130);finishTimer=setTimeout(()=>controls.classList.add('visible'),4000);}
+    document.querySelector('#start').onclick=()=>{audio=new(window.AudioContext||window.webkitAudioContext)();document.documentElement.requestFullscreen?.().catch(()=>{});play();};
+    document.querySelector('#replay').onclick=play; document.querySelector('#full').onclick=()=>document.documentElement.requestFullscreen?.();
+    document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r')play();if(e.key.toLowerCase()==='f')document.documentElement.requestFullscreen?.();});
+    document.addEventListener('mousemove',()=>{if(!controls.classList.contains('visible'))return;controls.style.opacity='.65';clearTimeout(controlTimer);controlTimer=setTimeout(()=>controls.style.opacity='0',1300);});
+  </script>
+</body>
+</html>
