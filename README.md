@@ -71,4 +71,10 @@ The front end is React 18, Vite, TypeScript, Zustand, and Framer Motion. A Verce
 - Add automated browser and accessibility regression tests
 - Record the exam reveal and include it as a README GIF
 
-MIT licensed.
+## License
+
+Protégé is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+
+Personal, educational, research, hobby, charitable, and other noncommercial use is permitted under the license terms. Commercial use—including selling the software, incorporating it into a paid product or service, or using it in anticipation of commercial application—requires a separate written license from the copyright holder.
+
+For commercial licensing, partnerships, or permissions, contact the project owner through GitHub.
